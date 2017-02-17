@@ -9,6 +9,7 @@ import StopButton     from './components/stop-button';
 import RepeatButton   from './components/repeat-button';
 import BoundsButton   from './components/bounds-button';
 import HideButton     from './components/hide-button';
+import VolumeControl   from './components/volume-control';
 
 // TODO
 
@@ -39,6 +40,8 @@ class MojsPlayer extends Module {
     this._defaults.rightBound   = 1;
     this._defaults.isSpeed      = false;
     this._defaults.speed        = 1;
+    this._defaults.isVolume     = false;
+    this._defaults.volume       = 1;
     this._defaults.isHidden     = false;
     this._defaults.precision    = 0.1;
     this._defaults.name         = 'mojs-player';
@@ -47,6 +50,7 @@ class MojsPlayer extends Module {
     this._defaults.onSeekStart = null;
     this._defaults.onSeekEnd = null;
     this._defaults.onProgress = null;
+    this._defaults.onVolumeChange = null;
 
     this.revision = '0.43.16';
 
@@ -229,6 +233,16 @@ class MojsPlayer extends Module {
       className:      CLASSES[ `${ className }__hide-button` ],
       isOn:           p.isHidden,
       onStateChange:  this._onHideStateChange.bind( this ),
+      prefix:         this._props.prefix
+    });
+
+    this.volumeControl = new VolumeControl({
+      parent:         left,
+      // progress:    p.speed,
+      volume:         p.volume,
+      isOn:           p.isVolume,
+      onVolumeChange: this._onVolumeChange.bind( this ),
+      onIsVolume:     this._onIsVolume.bind( this ),
       prefix:         this._props.prefix
     });
 
@@ -482,6 +496,26 @@ class MojsPlayer extends Module {
     @param {Boolean} Speed control state.
   */
   _onIsSpeed ( isOn ) { this._props.isSpeed = isOn; }
+  /*
+    Method that is invoked on volume value change.
+    @private
+    @param {Number} Volume value.
+    @param {Number} Slider progress.
+  */
+  _onVolumeChange ( volume, progress ) {
+    this._props[ 'raw-volume' ] = progress;
+    this._props.volume = volume;
+    const { onVolumeChange } = this._props;
+    if (this._isFunction(onVolumeChange)) {
+      onVolumeChange(volume);
+    }
+  }
+  /*
+    Method that is invoked on volume state change.
+    @private
+    @param {Boolean} Volume control state.
+  */
+  _onIsVolume ( isOn ) { this._props.isVolume = isOn; }
   /*
     Method that is invoked on timeline's left bound progress.
     @private

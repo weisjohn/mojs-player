@@ -88,7 +88,6 @@ class VolumeControl extends Module {
       snapPoint:    .5,
       snapStrength: .05
     });
-    console.log('this._props.volume', this._props.volume)
     this.slider.setProgress( this._props.volume );
   }
   /*

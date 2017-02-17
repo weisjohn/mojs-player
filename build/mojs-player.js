@@ -133,12 +133,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var _hideButton2 = _interopRequireDefault(_hideButton);
 
+	var _volumeControl = __webpack_require__(160);
+
+	var _volumeControl2 = _interopRequireDefault(_volumeControl);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	// TODO
 
-	__webpack_require__(160);
-	var CLASSES = __webpack_require__(162);
+	__webpack_require__(164);
+	var CLASSES = __webpack_require__(166);
 
 	var MojsPlayer = function (_Module) {
 	  (0, _inherits3.default)(MojsPlayer, _Module);
@@ -170,6 +174,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this._defaults.rightBound = 1;
 	    this._defaults.isSpeed = false;
 	    this._defaults.speed = 1;
+	    this._defaults.isVolume = false;
+	    this._defaults.volume = 1;
 	    this._defaults.isHidden = false;
 	    this._defaults.precision = 0.1;
 	    this._defaults.name = 'mojs-player';
@@ -178,6 +184,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this._defaults.onSeekStart = null;
 	    this._defaults.onSeekEnd = null;
 	    this._defaults.onProgress = null;
+	    this._defaults.onVolumeChange = null;
 
 	    this.revision = '0.43.16';
 
@@ -376,6 +383,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      className: CLASSES[className + '__hide-button'],
 	      isOn: p.isHidden,
 	      onStateChange: this._onHideStateChange.bind(this),
+	      prefix: this._props.prefix
+	    });
+
+	    this.volumeControl = new _volumeControl2.default({
+	      parent: left,
+	      // progress:    p.speed,
+	      volume: p.volume,
+	      isOn: p.isVolume,
+	      onVolumeChange: this._onVolumeChange.bind(this),
+	      onIsVolume: this._onIsVolume.bind(this),
 	      prefix: this._props.prefix
 	    });
 
@@ -691,6 +708,33 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	  MojsPlayer.prototype._onIsSpeed = function _onIsSpeed(isOn) {
 	    this._props.isSpeed = isOn;
+	  };
+	  /*
+	    Method that is invoked on volume value change.
+	    @private
+	    @param {Number} Volume value.
+	    @param {Number} Slider progress.
+	  */
+
+
+	  MojsPlayer.prototype._onVolumeChange = function _onVolumeChange(volume, progress) {
+	    this._props['raw-volume'] = progress;
+	    this._props.volume = volume;
+	    var onVolumeChange = this._props.onVolumeChange;
+
+	    if (this._isFunction(onVolumeChange)) {
+	      onVolumeChange(volume);
+	    }
+	  };
+	  /*
+	    Method that is invoked on volume state change.
+	    @private
+	    @param {Boolean} Volume control state.
+	  */
+
+
+	  MojsPlayer.prototype._onIsVolume = function _onIsVolume(isOn) {
+	    this._props.isVolume = isOn;
 	  };
 	  /*
 	    Method that is invoked on timeline's left bound progress.
@@ -9260,10 +9304,272 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 160 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+
+	exports.__esModule = true;
+
+	var _classCallCheck2 = __webpack_require__(78);
+
+	var _classCallCheck3 = _interopRequireDefault(_classCallCheck2);
+
+	var _possibleConstructorReturn2 = __webpack_require__(79);
+
+	var _possibleConstructorReturn3 = _interopRequireDefault(_possibleConstructorReturn2);
+
+	var _inherits2 = __webpack_require__(80);
+
+	var _inherits3 = _interopRequireDefault(_inherits2);
+
+	var _module = __webpack_require__(90);
+
+	var _module2 = _interopRequireDefault(_module);
+
+	var _labelButton = __webpack_require__(124);
+
+	var _labelButton2 = _interopRequireDefault(_labelButton);
+
+	var _slider = __webpack_require__(92);
+
+	var _slider2 = _interopRequireDefault(_slider);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	__webpack_require__(161);
+	var CLASSES = __webpack_require__(163);
+
+	var VolumeControl = function (_Module) {
+	  (0, _inherits3.default)(VolumeControl, _Module);
+
+	  function VolumeControl() {
+	    (0, _classCallCheck3.default)(this, VolumeControl);
+	    return (0, _possibleConstructorReturn3.default)(this, _Module.apply(this, arguments));
+	  }
+
+	  /*
+	    Method to declare defaults for the module.
+	    @private
+	    @overrides @ Module
+	  */
+	  VolumeControl.prototype._declareDefaults = function _declareDefaults() {
+	    _Module.prototype._declareDefaults.call(this);
+	    this._defaults.isOn = false;
+	    this._defaults.volume = 1;
+	    this._defaults.progress = .5;
+	    this._defaults.onVolumeChange = null;
+	    this._defaults.onIsVolume = null;
+	    this._defaults.muted = false;
+	  };
+	  /*
+	    Method to reset volume to 1x.
+	    @public
+	    @returns this
+	  */
+
+
+	  VolumeControl.prototype.reset = function reset() {
+	    this._onDoubleTap();
+	  };
+	  /*
+	    Method to decrease volume value.
+	    @public
+	    @param {Number} Value that the slider should be decreased by.
+	    @returns this.
+	  */
+
+
+	  VolumeControl.prototype.decreaseVolume = function decreaseVolume() {
+	    var amount = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0.01;
+
+	    var p = this._props;
+	    p.progress -= amount;
+	    p.progress = p.progress < 0 ? 0 : p.progress;
+	    this.slider.setProgress(p.progress);
+	    return this;
+	  };
+	  /*
+	    Method to inclease volume value.
+	    @public
+	    @param {Number} Value that the slider should be increased by.
+	    @returns this.
+	  */
+
+
+	  VolumeControl.prototype.increaseVolume = function increaseVolume() {
+	    var amount = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0.01;
+
+	    var p = this._props;
+	    p.progress += amount;
+	    p.progress = p.progress > 1 ? 1 : p.progress;
+	    this.slider.setProgress(p.progress);
+	    return this;
+	  };
+	  /*
+	    Initial render method.
+	    @private
+	    @overrides @ Module
+	  */
+
+
+	  VolumeControl.prototype._render = function _render() {
+	    var p = this._props,
+	        className = 'volume-control',
+	        slider = this._createElement('div'),
+	        sliderIn = this._createElement('div'),
+	        icon = this._createElement('div');
+
+	    this._addMainElement();
+	    this.el.classList.add(CLASSES[className]);
+	    // places for child components
+	    slider.classList.add(CLASSES[className + '__slider']);
+	    // sliderIn.classList.add( CLASSES[ `${ className }__slider-inner` ] );
+	    // slider.appendChild( sliderIn );
+	    this.el.appendChild(slider);
+	    // child components
+	    this.labelButton = new _labelButton2.default({
+	      parent: this.el,
+	      isOn: p.isOn,
+	      className: CLASSES[className + '__icon'],
+	      onStateChange: this._onButtonStateChange.bind(this),
+	      onDoubleTap: this._onDoubleTap.bind(this)
+	    });
+	    this.slider = new _slider2.default({
+	      parent: slider,
+	      isProgress: false,
+	      direction: 'y',
+	      onProgress: this._onSliderProgress.bind(this),
+	      snapPoint: .5,
+	      snapStrength: .05
+	    });
+	    this.slider.setProgress(this._props.volume);
+	  };
+	  /*
+	    Method that is invoked on slider progress.
+	    @private
+	    @param {Number} Progress of the slider.
+	  */
+
+
+	  VolumeControl.prototype._onSliderProgress = function _onSliderProgress(p) {
+	    // progress should be at least 0.01
+	    p = Math.max(p, 0.0001);
+
+	    var props = this._props,
+	        args = [];
+
+	    this._callIfFunction(props.onVolumeChange, p, p);
+	    this.labelButton.setLabelText(this._progressToLabel(props.progress = p));
+	  };
+	  /*
+	    Method that is invoked on button state change.
+	    @private
+	    @param {Boolean} State of the button switch.
+	  */
+
+
+	  VolumeControl.prototype._onButtonStateChange = function _onButtonStateChange(isOn) {
+	    var method = isOn ? 'add' : 'remove';
+	    this.el.classList[method](CLASSES['is-on']);
+	    this._callIfFunction(this._props.onIsVolume, isOn);
+	  };
+	  /*
+	    Method to recalc progress to label string.
+	    @private
+	    @param {Number} Progress [0...1].
+	    @returns {String} String for a label to set.
+	  */
+
+
+	  VolumeControl.prototype._progressToLabel = function _progressToLabel(progress) {
+	    return Math.round(progress * 100) + '%';
+	  };
+	  /*
+	    Method that is invoked on double button tap.
+	    @private
+	  */
+
+
+	  VolumeControl.prototype._onDoubleTap = function _onDoubleTap() {
+
+	    // capture the initial volume
+	    if (!this._props.muted) {
+	      this._props.volumeCache = this.slider._progress;
+	      this.slider.setProgress(0);
+	    } else {
+	      var restore = this._props.volumeCache;
+	      if (Math.round(restore * 100) <= 0) restore = 0.5;
+	      this.slider.setProgress(restore);
+	    }
+
+	    // toggle mutted
+	    this._props.muted = !this._props.muted;
+
+	    this.labelButton.off();
+	  };
+
+	  return VolumeControl;
+	}(_module2.default);
+
+	exports.default = VolumeControl;
+
+/***/ },
+/* 161 */
+/***/ function(module, exports, __webpack_require__) {
+
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(161);
+	var content = __webpack_require__(162);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(98)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!./../../node_modules/css-loader/index.js!./../../node_modules/postcss-loader/index.js!./volume-control.postcss.css", function() {
+				var newContent = require("!!./../../node_modules/css-loader/index.js!./../../node_modules/postcss-loader/index.js!./volume-control.postcss.css");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(97)();
+	// imports
+
+
+	// module
+	exports.push([module.id, "/*$PX:      1/16rem;*/\n\n._volume-control_b43x9_4 {\n  position:       relative;\n  display:        inline-block;\n  height:         40px\n}\n\n._volume-control__slider_b43x9_1 {\n  position:       absolute;\n  bottom:       100%;\n  left:       3px;\n  width:       30px;\n  height:       120px;\n  padding-top:       20px;\n  padding-bottom:       20px;\n  border-top-right-radius:       3px;\n  border-top-left-radius:       3px;\n  background:       #090909;\n  -webkit-transform:       translate(-99999999px, -99999999px);\n          transform:       translate(-99999999px, -99999999px);\n  -webkit-backface-visibility:       hidden;\n          backface-visibility:       hidden\n}\n\n._volume-control__slider_b43x9_1:before, ._volume-control__slider_b43x9_1:after {\n  content:       '';\n  position:       absolute;\n  top:       50%;\n  width:       3px;\n  height:       1px;\n  background:       #FFF\n}\n\n._volume-control__slider_b43x9_1:before {\n  left:       5px\n}\n\n._volume-control__slider_b43x9_1:after {\n  right:       5px\n}\n\n._volume-control__button_b43x9_1 {\n  border:       1px solid cyan\n}\n\n._volume-control_b43x9_4._is-on_b43x9_49 ._volume-control__slider_b43x9_1 {\n  -webkit-transform:       translate(0, 0);\n          transform:       translate(0, 0)\n}\n", ""]);
+
+	// exports
+
+
+/***/ },
+/* 163 */
+/***/ function(module, exports) {
+
+	module.exports = {
+		"volume-control": "_volume-control_b43x9_4",
+		"volume-control__slider": "_volume-control__slider_b43x9_1",
+		"volume-control__button": "_volume-control__button_b43x9_1",
+		"is-on": "_is-on_b43x9_49"
+	};
+
+/***/ },
+/* 164 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+
+	// load the styles
+	var content = __webpack_require__(165);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(98)(content, {});
@@ -9283,7 +9589,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 161 */
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(97)();
@@ -9297,7 +9603,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 162 */
+/* 166 */
 /***/ function(module, exports) {
 
 	module.exports = {
