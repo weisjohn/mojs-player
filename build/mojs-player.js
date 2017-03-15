@@ -9450,14 +9450,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 	  VolumeControl.prototype._onSliderProgress = function _onSliderProgress(p) {
+	    if (isNaN(p)) p = 1;
 	    // progress should be at least 0.01
 	    p = Math.max(p, 0.0001);
 
 	    var props = this._props,
 	        args = [];
 
+	    props.progress = p;
+
 	    this._callIfFunction(props.onVolumeChange, p, p);
-	    this.labelButton.setLabelText(this._progressToLabel(props.progress = p));
+	    this.labelButton.setLabelText(this._progressToLabel(props.progress));
 	  };
 	  /*
 	    Method that is invoked on button state change.
